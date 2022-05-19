@@ -1,24 +1,24 @@
 package it.unife.isa.symphony
 
 import android.Manifest
-import android.content.ActivityNotFoundException
-import android.content.DialogInterface
-import android.content.Intent
+import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.Menu
-import android.view.View
+import android.view.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
+import androidx.appcompat.widget.Toolbar
 import android.widget.FrameLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+
 import it.unife.isa.symphony.content.SongModel
 import it.unife.isa.symphony.content.SongModel.Song
 import java.util.*
@@ -31,6 +31,9 @@ import java.util.*
  */
 class SongsListActivity : AppCompatActivity() {
 
+    //Se l'activity è in modalità tablet o smartphone
+    //tablet: twoPane=true
+    //smartphone: twoPane=false
     private var twoPane: Boolean = false
     private val pickAudioCode=200
 
@@ -46,7 +49,9 @@ class SongsListActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_songs_list)
 
-        //TODO caricamento canzoni nella lista dal DB
+        //caricamento canzoni nella lista dal DB
+        if(SongModel.SONG_ITEMS.size==0)
+            SongModel.loadSongs(this)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -72,6 +77,15 @@ class SongsListActivity : AppCompatActivity() {
             Snackbar.make(view, "Add song", Snackbar.LENGTH_LONG)
                 .setAction("ADD",pickSong).show()
         }
+
+
+        if (findViewById<FrameLayout>(R.id.fragment_container) != null) {
+            //Se è presente un fragment nel Framelayout allora l'app è in modalità tablet
+            twoPane = true
+        }
+
+        //Si aggancia l'adapter alla recycler view
+        setupRecyclerView(findViewById(R.id.item_list))
 
     }
 
@@ -142,10 +156,142 @@ class SongsListActivity : AppCompatActivity() {
         }
     }
 
+
+    private fun setupRecyclerView(recyclerView: RecyclerView)
+    {
+        recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SONG_ITEMS, twoPane)
+
+        //Listener per rimuovere un elemento dalla recycler view con slide verso sinistra
+        val deleteListener=object: ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT)
+        {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                TODO("Not yet implemented")
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                //Si recupera la canzone associata al cassetto
+                val song=viewHolder.itemView.tag as Song
+
+                //Rimozione della canzone selezionata dal db dalla lista e dalla mappa
+                SongModel.deleteSong(applicationContext,song.id,viewHolder.absoluteAdapterPosition)
+
+                //Si notifica all'adapter della recycler view che è stato rimosso un elemento nella
+                //posizione specificata
+                recyclerView.adapter?.notifyItemRemoved(viewHolder.absoluteAdapterPosition)
+
+                //Quando si elimina una canzone si possono verificare 3 situazioni:
+                //1) Eliminazione di una qualsiasi canzone NON in riproduzione-->Si elimina senza problemi
+                //2) Eliminazione di una canzone in riproduzione su samrtphone-->Si interrompe la riproduzione
+                //3) Eliminazione da una canzone in riproduzione su tablet-->si interrope la riproduzione e si elimina il fragment
+                //sostituendolo con uno vuoto
+                //TODO
+            }
+        }
+
+        val swipeListener= ItemTouchHelper(deleteListener)
+        //Si aggancia il listener alla recycler view
+        swipeListener.attachToRecyclerView(recyclerView)
+    }
+
+    class SongRecyclerViewAdapter(private val parentActivity: SongsListActivity,
+                                  private val values: List<Song>,
+                                  private val twoPane: Boolean) :
+        RecyclerView.Adapter<SongRecyclerViewAdapter.ViewHolder>()
+    {
+        /*
+            * Listener applicato ad ogni cassetto della lista, ogni qualvolta si clicca su un holder
+            * viene viene verificato su quale dispositivo ci si trova ovvero smartphone o table.
+            * Su smartphone si chiama l'activity: Song_detail_activity
+            * Su tablet si crea un nuovo fragment e si avvia la transazione per aggiungerlo
+        */
+        private val onClickListener: View.OnClickListener
+
+        init {
+            onClickListener = View.OnClickListener { v ->
+                val item = v.tag as Song //Si recupera dal tag del cassetto la canzone
+                if (twoPane)
+                {
+                    //Creazione nuovo fragment, si passa l'id della canzone come parametro
+                    val fragment = PlayFragment().apply {
+                        arguments = Bundle().apply {
+                            putString(PlayFragment.SONG_ID, item.id.toString())
+                        }
+                    }
+                    parentActivity.supportFragmentManager
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .commit()
+                }
+                else
+                {
+                    //Avvio activity SongDetailActivity se su smatphone
+                    val intent = Intent(v.context, SongDetailActivity::class.java).apply {
+                        putExtra(PlayFragment.SONG_ID, item.id.toString())
+                    }
+                    v.context.startActivity(intent)
+                }
+            }
+        }
+
+        //Creazione grafica dal cassetto e l'oggetto cassetto
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.song_list_holder, parent, false)
+            return ViewHolder(view)
+        }
+
+        //Assegnazione delle informazioni da visualizzare sul cassetto: titolo, artista
+        //Assegnazione della canzone al tag del cassetto
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val item = values[position]
+            holder.tvTitolo.text = item.titolo
+            holder.tvArtista.text=item.artista
+
+            with(holder.itemView) {
+                tag = item
+                setOnClickListener(onClickListener)
+            }
+        }
+
+        //Ritorna numero elementi della lista di canzoni
+        override fun getItemCount() = values.size
+
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+        {
+            val tvTitolo: TextView = view.findViewById(R.id.tv_titolo)
+            val tvArtista: TextView =view.findViewById(R.id.tv_artista)
+        }
+    }
+
     //Gonfiaggio dell'interfaccia grafica del menù
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main,menu)
         return super.onCreateOptionsMenu(menu)
+    }
+
+    //Aggancio delle azioni ai vari elementi del menù
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId)
+        {
+            R.id.menu_guide->{
+                //Informazioni su come usare l'app
+                val builer=AlertDialog.Builder(this)
+                builer.setTitle(R.string.info)
+                builer.setMessage(R.string.info_message)
+                builer.setPositiveButton(R.string.confirm_dialog,DialogInterface.OnClickListener{ dialogInterface: DialogInterface, i: Int ->})
+                builer.show()
+            }
+            R.id.menu_add->{
+                //Aggiunta canzone (secondo modo)
+                try {
+                    startActivityForResult(Intent(Intent.ACTION_PICK, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI), pickAudioCode)
+                } catch(e: ActivityNotFoundException) {
+                    Toast.makeText(applicationContext, R.string.no_picked_audio, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        return super.onOptionsItemSelected(item)
     }
 
     //Codice della richiesta del permesso per accedere alla memoria
