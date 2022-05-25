@@ -223,6 +223,18 @@ class PlayerService : Service() {
         //Si setta la posizione del mediaplayer in base alla posizione in cui si trova la seekbar
         fun seekTo(progress:Int)
         { mp.seekTo(progress) }
+
+        // Funzione che modifica la posizione corrente in avanti sulla base di un parametro fornito in input
+        fun goAhead(msec: Int) {
+            if (currentPosition()+msec <mp.duration) mp.seekTo(currentPosition() + msec)
+            else mp.seekTo(mp.duration-1)
+        }
+
+        // Funzione che modifica la posizione corrente all'indietro sulla base di un parametro fornito in input
+        fun goBack(msec: Int) {
+            if (currentPosition()-msec > 0) mp.seekTo(currentPosition()!! - msec)
+            else mp.seekTo(0)
+        }
     }
 
     //Costante contenente l'id del canale di notifica
