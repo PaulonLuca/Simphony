@@ -5,20 +5,20 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.IBinder
 import android.provider.MediaStore
 import android.view.*
-import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.RecyclerView
-import androidx.appcompat.widget.Toolbar
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-
 import it.unife.isa.symphony.content.SongModel
 import it.unife.isa.symphony.content.SongModel.Song
 import java.util.*
@@ -36,6 +36,20 @@ class SongsListActivity : AppCompatActivity() {
     //smartphone: twoPane=false
     private var twoPane: Boolean = false
     private val pickAudioCode=200
+    private var binder: PlayerService.PlayBinder?=null
+    private var mBound=false
+
+    //Connessione usata per comuincare con il servizio quando si cancella una canzone
+    private val mConnection: ServiceConnection =object : ServiceConnection {
+        override fun onServiceDisconnected(name: ComponentName?) {
+            mBound=false
+        }
+
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            binder=service as PlayerService.PlayBinder
+            mBound=true
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,9 +98,23 @@ class SongsListActivity : AppCompatActivity() {
             twoPane = true
         }
 
+        //Avvio servizio in modalità start per mantenerlo attivo durante
+        //tutto il ciclo di vita dell'applicazione. Il servizio verrà stoppato alla
+        //chiusura dell'app poichè nel manifest si è specificato: stopWithTask=true
+        val i=Intent(applicationContext,PlayerService::class.java)
+        //Creazione connessione per comuniare con service in caso di cancellazione canzone in riproduzione
+        bindService(i,mConnection, Context.BIND_AUTO_CREATE)
+        startService(i)
+
         //Si aggancia l'adapter alla recycler view
         setupRecyclerView(findViewById(R.id.item_list))
 
+    }
+
+    //Quando viene distrutta l'activity ci si scollega dal servizio in modalità bound.
+    override fun onDestroy() {
+        unbindService(mConnection)
+        super.onDestroy()
     }
 
     //Quando l'utente ha approvato l'accesso alla memoria
@@ -130,14 +158,28 @@ class SongsListActivity : AppCompatActivity() {
             //interrogando, attraverso una query, il content provider di sistema tramite content resolver
             val songUri: Uri? = data?.data
             //Colonne su cui proiettare
-            val projection= arrayOf(MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.GENRE)
+            val projection= arrayOf(MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.DURATION,MediaStore.Audio.Media._ID)
             val cursor=contentResolver.query(songUri!!,projection,null,null,null)
+
             if(cursor!=null && cursor.moveToFirst())
             {
+                val musicId: Int = cursor.getString(3).toInt()
+                val uri = MediaStore.Audio.Genres.getContentUriForAudioId("external", musicId)
+                val projectionGenres= arrayOf(MediaStore.Audio.Genres._ID)
+                val genresCursor = contentResolver.query(uri,projectionGenres, null, null, null)
+
+                var genres = ""
+                if (genresCursor!!.moveToFirst()) {
+
+                    do {
+                        genres += genresCursor.getString(0).toString() + ";"
+                    } while (genresCursor.moveToNext())
+                }
+
                 val title=cursor.getString(0)
                 val artist=cursor.getString(1)
                 val duration=cursor.getString(2)
-                val genre=cursor.getString(3)
+                val genre=genres
                 s=Song(UUID.randomUUID(),title,artist,songUri,duration,genre)
                 cursor.close()
             }

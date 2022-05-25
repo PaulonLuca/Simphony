@@ -13,7 +13,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Symphony" >
-
+        <service
+            android:name=".PlayerService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="true" />
         <activity
             android:name=".SongsListActivity"
             android:label="@string/app_name"

@@ -1,8 +1,15 @@
 package it.unife.isa.symphony
 
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -21,6 +28,30 @@ import java.util.concurrent.TimeUnit
 class PlayFragment : Fragment() {
 
     private var selectedSong: Song? = null //Canzone in riproduzione
+    private var binder: PlayerService.PlayBinder?=null   //Interfaccia di comunicazione con il servizio
+    private var mBound=false               //Booleno che identifica lo stato della connessione
+    private var seekbar:SeekBar?=null      //Riferimento alla seekbar
+    private var tvTitolo:TextView?=null
+    private var tvDuration:TextView?=null
+    private var handlare= Handler(Looper.getMainLooper()) //Gestore per l'inserimento nella coda messaggi dell'UI thread (main thread)
+    private lateinit var runnable:Runnable               //dell'oggetto runnable, contenente il codice da eseguire
+
+    //Bindig dal fragment per comunicare con il servizio: play, pausa, stop, next, prev, seek
+    //Si esegue il bind quando l'app risulta in foregeround e ci si scollega quando il fragment
+    //viene distrutto
+    private val mConnection: ServiceConnection =object : ServiceConnection {
+        override fun onServiceDisconnected(name: ComponentName?) {
+            mBound=false
+        }
+
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            binder=service as PlayerService.PlayBinder
+            mBound=true
+
+            //Si mette in play la canzone selezionata
+            binder?.setSong(selectedSong!!)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,8 +77,19 @@ class PlayFragment : Fragment() {
         }
     }
 
+    //Quando il frammento è in foreground ci si collega in modalità bound al servizio
     override fun onResume() {
         super.onResume()
+        val i= Intent(context?.applicationContext,PlayerService::class.java)
+        activity?.bindService(i,mConnection, Context.BIND_AUTO_CREATE)
+
+        //Codice da mettere periodicamente in coda, ogni secondo, all'UI thread per spostare la seekbar
+        runnable= Runnable {
+            if(mBound)
+                seekbar?.progress=binder?.currentPosition()!!
+            handlare.postDelayed(runnable,1000)
+        }
+        handlare.postDelayed(runnable,1000)
     }
 
 
@@ -60,6 +102,28 @@ class PlayFragment : Fragment() {
             rootView.findViewById<TextView>(R.id.tv_palyingSong).text = it.titolo
         }
 
+        seekbar=rootView.findViewById(R.id.seekBar)
+        //Impostazione del limite superiore della seekbar, cioè il massimo valore possibile in ms
+        seekbar?.max=selectedSong?.durata?.toInt()!!
+
+        //Muovendo la seekbar avanti o indietro ci si muove nella canzone e si aggiorna il mediaplayer
+        seekbar?.setOnSeekBarChangeListener(object :SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if(mBound)
+                {
+                    if(fromUser)//se è l'utente a modificare la posizone nella seekbar
+                    {
+                        binder?.seekTo(progress)
+                        seekBar?.progress=progress
+                    }
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) { }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) { }
+        })
+
         return rootView
     }
 
@@ -67,6 +131,8 @@ class PlayFragment : Fragment() {
     //Quando si distrgge il fragment ci si scollega dal servizio
     override fun onDestroy() {
         super.onDestroy()
+        activity?.unbindService(mConnection)
+        handlare.removeCallbacksAndMessages(null)
     }
 
 

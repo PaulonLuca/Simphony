@@ -21,4 +21,5 @@
     <string name="play_song_deleted">Mediaplayer stopped. Playing song deleted.</string>
     <string name="confirm_dialog">OK</string>
     <string name="already_in">Song already in the list</string>
+    <string name="channel_desc">Information about playing song</string>
 </resources>
