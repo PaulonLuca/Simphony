@@ -34,7 +34,7 @@ class SongsListActivity : AppCompatActivity() {
     //Se l'activity è in modalità tablet o smartphone
     //tablet: twoPane=true
     //smartphone: twoPane=false
-    private var twoPane: Boolean = false
+    //private var twoPane: Boolean = false
     private val pickAudioCode=200
     private var binder: PlayerService.PlayBinder?=null
     private var mBound=false
@@ -339,5 +339,6 @@ class SongsListActivity : AppCompatActivity() {
     //Codice della richiesta del permesso per accedere alla memoria
     companion object{
         private const val REQUEST_READ_EXTERNAL_STORAGE:Int=1
+        var twoPane: Boolean = false
     }
 }

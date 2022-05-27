@@ -24,6 +24,7 @@ class PlayerService : Service() {
     private var mp:MediaPlayer
     private var isPlaying=false //verifica se si è in riproduzione, poichè mp.isPlaying()
     // si può chiamare solo se si è in started state non in prepared state
+    private var isPaused = false
 
     private var isStopped=false //verifica che il mediaplayer è stato stoppato, cioè si è azzerata la canzone corrente
     private var notificationBuilder: Notification.Builder?=null //Costruttore della notifica per l'utente
@@ -200,7 +201,19 @@ class PlayerService : Service() {
             {
                 mp.pause()
                 isPlaying=false
+                isPaused=true
             }
+        }
+
+        fun resume() {
+            isPaused = false
+            isPlaying=true
+            mp.start()
+        }
+
+        // Funzione che restituisce lo stato di pausa della canzone
+        fun getPause(): Boolean {
+            return isPaused
         }
 
         fun stop()
@@ -208,7 +221,9 @@ class PlayerService : Service() {
             //Si mette in stato stop il mediaplayer, si interrompe quindi la riproduzione della canzone
             mp.stop()
             isStopped=true
+            isPaused = false
             isPlaying=false
+            currentSong=null
             stopForeground(true)//Servizio non più in foreground e rimozione notifica
         }
 
