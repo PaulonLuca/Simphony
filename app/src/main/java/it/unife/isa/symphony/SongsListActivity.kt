@@ -165,21 +165,21 @@ class SongsListActivity : AppCompatActivity() {
             {
                 val musicId: Int = cursor.getString(3).toInt()
                 val uri = MediaStore.Audio.Genres.getContentUriForAudioId("external", musicId)
-                val projectionGenres= arrayOf(MediaStore.Audio.Genres._ID)
+                val projectionGenres= arrayOf(MediaStore.Audio.Genres.NAME)
                 val genresCursor = contentResolver.query(uri,projectionGenres, null, null, null)
 
-                var genres = ""
+                var genre = ""
                 if (genresCursor!!.moveToFirst()) {
 
-                    do {
-                        genres += genresCursor.getString(0).toString() + ";"
-                    } while (genresCursor.moveToNext())
+                   // do {
+                        genre = genresCursor.getString(0).toString()
+                   // } while (genresCursor.moveToNext())
                 }
 
                 val title=cursor.getString(0)
                 val artist=cursor.getString(1)
                 val duration=cursor.getString(2)
-                val genre=genres
+
                 s=Song(UUID.randomUUID(),title,artist,songUri,duration,genre)
                 cursor.close()
             }
@@ -201,6 +201,8 @@ class SongsListActivity : AppCompatActivity() {
 
     private fun setupRecyclerView(recyclerView: RecyclerView)
     {
+        //TODO COMPLETARE LA RICERCA
+        // if searched==true then SongModel.SEARCH_SONG_ITEMS, else SongModel.SONG_ITEMS
         recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SONG_ITEMS, twoPane)
 
         //Listener per rimuovere un elemento dalla recycler view con slide verso sinistra
@@ -226,7 +228,25 @@ class SongsListActivity : AppCompatActivity() {
                 //2) Eliminazione di una canzone in riproduzione su samrtphone-->Si interrompe la riproduzione
                 //3) Eliminazione da una canzone in riproduzione su tablet-->si interrope la riproduzione e si elimina il fragment
                 //sostituendolo con uno vuoto
-                //TODO
+                if(mBound && song.id==binder?.currentSong()?.id)
+                {
+                    if(twoPane)
+                    {
+                        binder?.stop()
+                        //Recupero fragment corrente
+                        val curFragment=supportFragmentManager.findFragmentById(R.id.fragment_container)
+                        if(curFragment!=null)
+                            supportFragmentManager.beginTransaction().remove(curFragment).commit()
+                        //Eliminazione del vecchio fragment e sostituzione con uno nuovo
+                        supportFragmentManager.beginTransaction().replace(R.id.fragment_container,PlayFragment())
+                    }
+                    else
+                    {
+                        //Interruzione riproduzione
+                        binder?.stop()
+                    }
+                    Toast.makeText(applicationContext, R.string.play_song_deleted, Toast.LENGTH_SHORT).show()
+                }
             }
         }
 

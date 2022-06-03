@@ -148,6 +148,9 @@ class PlayerService : Service() {
                     Toast.makeText(applicationContext, "Errore", Toast.LENGTH_SHORT).show()
                 }
             }
+            else {
+                LocalBroadcastManager.getInstance(this@PlayerService).sendBroadcast(Intent("ChangeButton"))
+            }
         }
 
         fun play()

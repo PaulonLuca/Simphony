@@ -3,6 +3,7 @@ package it.unife.isa.symphony.content
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import it.unife.isa.symphony.SongOpenHelper
 import java.util.UUID
 
@@ -16,9 +17,18 @@ object SongModel {
 
     //Array di canzoni
     val SONG_ITEMS: MutableList<Song> = ArrayList()
-
     //Mappa di canzioni accessibili tramite l'ID usato come chiave
     val SONG_MAP: MutableMap<UUID, Song> = HashMap()
+
+
+    val SEARCH_SONG_ITEMS: MutableList<Song> = ArrayList()
+    val SEARCH_SONG_MAP: MutableMap<UUID, Song> = HashMap()
+
+    // Quando si fa la ricerca, si setta searched a True. Nel tornare a @SongsListActivity
+    var searched = false
+
+    const val ARTIST = 0
+    const val GENRE = 1
 
     //Caricamento della lista di canzoni dal db alla lista e alla mappa
     fun loadSongs(context: Context)
@@ -40,6 +50,7 @@ object SongModel {
                 val uri=Uri.parse(cursor.getString(3))
                 val duration=cursor.getString(4)
                 val genre=cursor.getString(5)
+                Log.d("--------Test--------",title + " /// " + genre)
                 val s=Song(id,title,artist,uri,duration,genre)
 
                 //Inserimento nella lista e nella mappa
@@ -127,6 +138,25 @@ object SongModel {
     }
 
     //TODO: Filtrare per artista o per genere a runtime
+    fun searchBy(attributo: Int, keyword: String)
+    {
+        if(attributo==ARTIST) {
+            for (e in SONG_ITEMS)
+                if (e.artista == keyword)
+                {
+                    SEARCH_SONG_ITEMS.add(e)
+                    SEARCH_SONG_MAP.put(e.id,e)
+                }
+        }
+        else if(attributo==GENRE) {
+            for (e in SONG_ITEMS)
+                if (e.genre == keyword)
+                {
+                    SEARCH_SONG_ITEMS.add(e)
+                    SEARCH_SONG_MAP.put(e.id,e)
+                }
+        }
+    }
 
     //Classe dati che rappresenta una canzone
     //L'id della canzone è un valore long UUID generato casualmente

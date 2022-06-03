@@ -2,16 +2,17 @@ package it.unife.isa.symphony
 
 
 import android.content.*
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import android.view.*
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.*
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import it.unife.isa.symphony.content.SongModel
@@ -24,10 +25,6 @@ import java.util.*
  * e sia in [SongDetailActivity] su smartphone.
  */
 
-//TODO Broadcast receiver per bottone play/pausa, audio_becoming_noisy, error
-//TODO Slide per eliminare canzone
-//TODO Slide per skip next/previous
-//TODO Salvare il genere
 //TODO activity ricerca
 //TODO copertina canzone (?)
 
@@ -40,7 +37,9 @@ class PlayFragment : Fragment() {
     private var tvTitolo:TextView?=null
     private var tvArtista:TextView?=null
     private var tvDuration:TextView?=null
+    private lateinit var btnPlay: ImageButton
     private lateinit var current_time: TextView
+    private lateinit var song_image: ImageView
     private var handlare= Handler(Looper.getMainLooper()) //Gestore per l'inserimento nella coda messaggi dell'UI thread (main thread)
     private lateinit var runnable:Runnable               //dell'oggetto runnable, contenente il codice da eseguire
     private var paused: Boolean = false
@@ -76,6 +75,19 @@ class PlayFragment : Fragment() {
                     changeSong(nextSong)
                 }
             }
+            // Intent ricevuto quando desideriamo riprodurre una canzone che è gia in esecuzione (o in pausa)
+            // oppure in risposta ad un evento di "Audio Becoming Noisy"
+            if(intent?.action=="ChangeButton") {
+
+                // Chiediamo al service lo stato di pausa della canzone
+                paused = binder!!.getPause()
+
+                // Modifichiamo di conseguenza l'aspetto del bottone play/pause
+                if (paused) btnPlay.setImageResource(R.drawable.play_button)
+                else btnPlay.setImageResource(R.drawable.pause_button)
+
+            }
+
         }
     }
 
@@ -126,6 +138,7 @@ class PlayFragment : Fragment() {
     {
         //Registrazione del broadcast receiver per la notifica da parte del service del completamento della riproduzione.
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(fragmentReceiver, IntentFilter("SongComplete"))
+        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(fragmentReceiver, IntentFilter("ChangeButton"))
         val rootView = inflater.inflate(R.layout.fragment_play, container, false)
 
         // Visualizza titolo nell'interfaccia di riproduzione
@@ -138,7 +151,7 @@ class PlayFragment : Fragment() {
 
         //Si recuperano elementi grafici dell'interfaccia: bottoni play, pausa, next, prev, stop
         //e si agganciano i listener
-        val btnPlay=rootView.findViewById<ImageButton>(R.id.btn_play)
+        btnPlay=rootView.findViewById(R.id.btn_play)
         val btnNext=rootView.findViewById<ImageButton>(R.id.btn_next)
         val btnPrev=rootView.findViewById<ImageButton>(R.id.btn_previous)
         val btnStop=rootView.findViewById<ImageButton>(R.id.btn_stop)
@@ -150,8 +163,11 @@ class PlayFragment : Fragment() {
         tvDuration=rootView.findViewById(R.id.tv_duration)
         tvDuration?.text=convertDuration(selectedSong?.durata?.toLong()!!)
         seekbar=rootView.findViewById(R.id.seekBar)
+        song_image = rootView.findViewById(R.id.song_image)
         //Impostazione del limite superiore della seekbar, cioè il massimo valore possibile in ms
         seekbar?.max=selectedSong?.durata?.toInt()!!
+
+        updateThumbnail(selectedSong!!.uri) // Aggiorno la copertina della canzone
 
         // Faccio in modo che il titolo e l'artista siano "selected". Questo permette di ottenere
         // uno slide del contenuto di queste View quando risulta troppo lungo per essere interamente
@@ -258,6 +274,38 @@ class PlayFragment : Fragment() {
             }
         }
 
+        // Listener per lo Swipe Left e Right
+        rootView.setOnTouchListener(object : OnSwipeTouchListener() {
+            override fun onSwipeLeft() { // Swipe Left == Skip Next
+                if(mBound)
+                {
+                    //canzone successiva, se ci sono almeno 2 canzoni
+                    if(SongModel.SONG_ITEMS.size>1)
+                    {
+                        val nextSong=SongModel.getNext(selectedSong!!)
+                        changeSong(nextSong)
+                        paused=false
+                        btnPlay.setImageResource(R.drawable.pause_button)
+                        binder?.setSong(nextSong)
+                    }
+                }
+            }
+            override fun onSwipeRight() { // Swipe Right == Skip Previous
+                if(mBound)
+                {
+                    //canzone precedente, se ci sono almeno 2 canzoni
+                    if(SongModel.SONG_ITEMS.size>1)
+                    {
+                        val prevSong=SongModel.getPreviuos(selectedSong!!)
+                        changeSong(prevSong)
+                        paused=false
+                        btnPlay.setImageResource(R.drawable.pause_button)
+                        binder?.setSong(prevSong)
+                    }
+                }
+            }
+        })
+
         return rootView
     }
 
@@ -270,6 +318,7 @@ class PlayFragment : Fragment() {
         tvDuration?.text=convertDuration(selectedSong?.durata?.toLong()!!)
         seekbar?.max=selectedSong?.durata?.toInt()!!
         seekbar?.progress=0
+        updateThumbnail(selectedSong!!.uri) // Aggiorno la copertina della canzone
     }
 
 
@@ -298,6 +347,61 @@ class PlayFragment : Fragment() {
         super.onSaveInstanceState(outState)
     }
 
+    // Listener per gli eventi di Swipe
+    open class OnSwipeTouchListener : View.OnTouchListener {
+
+        private val gestureDetector = GestureDetector(GestureListener())
+
+        fun onTouch(event: MotionEvent): Boolean {
+            return gestureDetector.onTouchEvent(event)
+        }
+
+        private inner class GestureListener : GestureDetector.SimpleOnGestureListener() {
+
+            private val SWIPE_THRESHOLD = 100
+            private val SWIPE_VELOCITY_THRESHOLD = 100
+
+            override fun onDown(e: MotionEvent): Boolean {
+                return true
+            }
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                onTouch(e)
+                return true
+            }
+
+            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                val result = false
+                try {
+                    val diffY = e2.y - e1.y
+                    val diffX = e2.x - e1.x
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                            if (diffX > 0) {
+                                onSwipeRight()
+                            } else {
+                                onSwipeLeft()
+                            }
+                        }
+                    } else {}
+                }
+                catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                return result
+            }
+        }
+
+        override fun onTouch(v: View, event: MotionEvent): Boolean {
+            return gestureDetector.onTouchEvent(event)
+        }
+
+        open fun onSwipeRight() {}
+
+        open fun onSwipeLeft() {}
+
+    }
+
     // Funzione che converte gli istanti di tempo da msec al formato stringa "HH:MM:SS"
     private fun convertDuration(duration: Long): String {
         var out: String = ""
@@ -315,6 +419,28 @@ class PlayFragment : Fragment() {
             "$minutes:$seconds"
         }
         return out
+    }
+
+    // Funzione che si occupa di aggiornare la copertina della canzone provando a cercarla in memoria
+    private fun updateThumbnail(uri: Uri) {
+        Thread{ // Eseguo in un thread separato
+            song_image.post(Runnable {
+                val mmr = MediaMetadataRetriever()
+                val rawArt: ByteArray?
+                val art: Bitmap
+                val bfo = BitmapFactory.Options()
+                try{
+                    mmr.setDataSource(requireContext(), uri) // Accedo ai metadati della canzone
+                    rawArt = mmr.embeddedPicture // Chiedo di accedere all'immagine associata al file e la salvo in un ByteArray
+                    if (null != rawArt) { // Se trovo un'immagine di copertina...
+                        art = BitmapFactory.decodeByteArray(rawArt, 0, rawArt.size, bfo) //...decodifico l'array in un BitMap...
+                        song_image.setImageBitmap(art) //...e modifico l'interfaccia.
+                    } else song_image.setImageResource(R.drawable.no_image3) // Altrimenti uso l'immagine standard
+                }
+                catch (e: Exception) {
+                    song_image.setImageResource(R.drawable.no_image3) // se catturo un'eccezione semplicemente mostro l'immagine standard
+                }
+            })}.start()
     }
 
 
