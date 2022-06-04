@@ -1,20 +1,24 @@
 package it.unife.isa.symphony
 
 import android.Manifest
+import android.app.SearchManager
 import android.content.*
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.MediaStore
+import android.util.Log
 import android.view.*
-import android.widget.FrameLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.core.graphics.createBitmap
+import androidx.core.view.children
+import androidx.core.view.get
+import androidx.core.view.size
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -22,6 +26,7 @@ import com.google.android.material.snackbar.Snackbar
 import it.unife.isa.symphony.content.SongModel
 import it.unife.isa.symphony.content.SongModel.Song
 import java.util.*
+
 
 /**
  * Activity che rappresenta una lista di canzoni.
@@ -55,16 +60,22 @@ class SongsListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         //Richiesta permesso di accesso alla memoria esterna all'app
-        if(ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED)
-        {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_READ_EXTERNAL_STORAGE)
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                REQUEST_READ_EXTERNAL_STORAGE
+            )
         }
 
         setContentView(R.layout.activity_songs_list)
 
         //caricamento canzoni nella lista dal DB
-        if(SongModel.SONG_ITEMS.size==0)
+        if (SongModel.SONG_ITEMS.size == 0)
             SongModel.loadSongs(this)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -74,13 +85,14 @@ class SongsListActivity : AppCompatActivity() {
 
         //Click listener per aggiungere una canzone alla lista.
         //Viene richiamata l'activity di sistema ACTION_PICK per recuperare la canzone
-        val pickSong = object : View.OnClickListener{
+        val pickSong = object : View.OnClickListener {
             override fun onClick(v: View?) {
                 val intent = Intent(Intent.ACTION_PICK, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
                 try {
                     startActivityForResult(intent, pickAudioCode)
-                } catch(e: ActivityNotFoundException) {
-                    Toast.makeText(applicationContext, R.string.no_picked_audio, Toast.LENGTH_SHORT).show()
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(applicationContext, R.string.no_picked_audio, Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }
@@ -89,7 +101,7 @@ class SongsListActivity : AppCompatActivity() {
         //e si collega al listener pickSong.
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { view ->
             Snackbar.make(view, "Add song", Snackbar.LENGTH_LONG)
-                .setAction("ADD",pickSong).show()
+                .setAction("ADD", pickSong).show()
         }
 
 
@@ -101,9 +113,9 @@ class SongsListActivity : AppCompatActivity() {
         //Avvio servizio in modalità start per mantenerlo attivo durante
         //tutto il ciclo di vita dell'applicazione. Il servizio verrà stoppato alla
         //chiusura dell'app poichè nel manifest si è specificato: stopWithTask=true
-        val i=Intent(applicationContext,PlayerService::class.java)
+        val i = Intent(applicationContext, PlayerService::class.java)
         //Creazione connessione per comuniare con service in caso di cancellazione canzone in riproduzione
-        bindService(i,mConnection, Context.BIND_AUTO_CREATE)
+        bindService(i, mConnection, Context.BIND_AUTO_CREATE)
         startService(i)
 
         //Si aggancia l'adapter alla recycler view
@@ -328,6 +340,12 @@ class SongsListActivity : AppCompatActivity() {
     //Gonfiaggio dell'interfaccia grafica del menù
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main,menu)
+        // Associate searchable configuration with the SearchView
+        val cn = ComponentName(this, SearchActivity::class.java)
+        val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
+        (menu!!.findItem(R.id.search).actionView as SearchView).apply {
+            setSearchableInfo(searchManager.getSearchableInfo(cn))
+        }
         return super.onCreateOptionsMenu(menu)
     }
 
@@ -351,8 +369,21 @@ class SongsListActivity : AppCompatActivity() {
                     Toast.makeText(applicationContext, R.string.no_picked_audio, Toast.LENGTH_SHORT).show()
                 }
             }
+            R.id.artist->{
+                if(item.isChecked)
+                    item.setChecked(false)
+                else
+                    item.setChecked(true)
+                Log.d("------TEST-----","artist")
+            }
+            R.id.genre->{
+                if(item.isChecked)
+                    item.setChecked(false)
+                else
+                    item.setChecked(true)
+                Log.d("------TEST-----","genre")
+            }
         }
-
         return super.onOptionsItemSelected(item)
     }
 
