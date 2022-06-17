@@ -8,23 +8,25 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.MediaStore
-import android.util.Log
 import android.view.*
+import android.view.View.OnFocusChangeListener
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
-import androidx.core.graphics.createBitmap
-import androidx.core.view.children
-import androidx.core.view.get
-import androidx.core.view.size
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import it.unife.isa.symphony.content.SongModel
+import it.unife.isa.symphony.content.SongModel.ARTIST
+import it.unife.isa.symphony.content.SongModel.GENRE
 import it.unife.isa.symphony.content.SongModel.Song
+import it.unife.isa.symphony.content.SongModel.TITLE
+import it.unife.isa.symphony.content.SongModel.resetStateSearch
+import it.unife.isa.symphony.content.SongModel.searchFor
+import it.unife.isa.symphony.content.SongModel.searched
 import java.util.*
 
 
@@ -214,8 +216,12 @@ class SongsListActivity : AppCompatActivity() {
     private fun setupRecyclerView(recyclerView: RecyclerView)
     {
         //TODO COMPLETARE LA RICERCA
-        // if searched==true then SongModel.SEARCH_SONG_ITEMS, else SongModel.SONG_ITEMS
-        recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SONG_ITEMS, twoPane)
+        if (searched)
+            recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SEARCH_SONG_ITEMS, twoPane)
+        else
+            recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SONG_ITEMS, twoPane)
+        //then SongModel.SEARCH_SONG_ITEMS, else SongModel.SONG_ITEMS
+        //recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SONG_ITEMS, twoPane)
 
         //Listener per rimuovere un elemento dalla recycler view con slide verso sinistra
         val deleteListener=object: ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT)
@@ -346,6 +352,12 @@ class SongsListActivity : AppCompatActivity() {
         (menu!!.findItem(R.id.search).actionView as SearchView).apply {
             setSearchableInfo(searchManager.getSearchableInfo(cn))
         }
+
+        if(searched)
+        {
+            menu.removeItem(R.id.search)
+            menu.findItem(R.id.recreate).setVisible(true)
+        }
         return super.onCreateOptionsMenu(menu)
     }
 
@@ -373,15 +385,32 @@ class SongsListActivity : AppCompatActivity() {
                 if(item.isChecked)
                     item.setChecked(false)
                 else
+                {
                     item.setChecked(true)
-                Log.d("------TEST-----","artist")
+                    searchFor= ARTIST;
+                }
             }
             R.id.genre->{
                 if(item.isChecked)
                     item.setChecked(false)
                 else
+                {
                     item.setChecked(true)
-                Log.d("------TEST-----","genre")
+                    searchFor= GENRE;
+                }
+            }
+            R.id.title->{
+                if(item.isChecked)
+                    item.setChecked(false)
+                else
+                {
+                    item.setChecked(true)
+                    searchFor= TITLE;
+                }
+            }
+            R.id.recreate->{
+                recreate()
+                resetStateSearch()
             }
         }
         return super.onOptionsItemSelected(item)

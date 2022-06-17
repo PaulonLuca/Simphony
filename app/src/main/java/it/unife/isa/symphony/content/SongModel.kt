@@ -21,14 +21,16 @@ object SongModel {
     val SONG_MAP: MutableMap<UUID, Song> = HashMap()
 
 
-    val SEARCH_SONG_ITEMS: MutableList<Song> = ArrayList()
-    val SEARCH_SONG_MAP: MutableMap<UUID, Song> = HashMap()
+    var SEARCH_SONG_ITEMS: MutableList<Song> = ArrayList()
+    var SEARCH_SONG_MAP: MutableMap<UUID, Song> = HashMap()
 
     // Quando si fa la ricerca, si setta searched a True. Nel tornare a @SongsListActivity
     var searched = false
+    var searchFor=0
 
-    const val ARTIST = 0
-    const val GENRE = 1
+    const val TITLE=0
+    const val ARTIST = 1
+    const val GENRE = 2
 
     //Caricamento della lista di canzoni dal db alla lista e alla mappa
     fun loadSongs(context: Context)
@@ -137,7 +139,6 @@ object SongModel {
         return SONG_ITEMS[SONG_ITEMS.size-1]
     }
 
-    //TODO: Filtrare per artista o per genere a runtime
     fun searchBy(attributo: Int, keyword: String)
     {
         if(attributo==ARTIST) {
@@ -156,6 +157,22 @@ object SongModel {
                     SEARCH_SONG_MAP.put(e.id,e)
                 }
         }
+        else if(attributo==TITLE) {
+            for (e in SONG_ITEMS)
+                if (e.titolo == keyword)
+                {
+                    SEARCH_SONG_ITEMS.add(e)
+                    SEARCH_SONG_MAP.put(e.id,e)
+                }
+        }
+    }
+
+    fun resetStateSearch()
+    {
+        searchFor=0
+        searched=false
+        SEARCH_SONG_ITEMS=ArrayList()
+        SEARCH_SONG_MAP= HashMap()
     }
 
     //Classe dati che rappresenta una canzone

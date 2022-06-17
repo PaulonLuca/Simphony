@@ -17,9 +17,10 @@
     <string name="info">How to use the app</string>
     <string name="info_message">To add a song press + floating button or add song in the menu.\nTo delete a song slide the song left.\nTo play music tap
     on a song.\nTo play/pause press play/pause buttons.\nTo change song press previous or next.\nTo stop the music press STOP and then
-        play to restart the song.\nTo move in the song drag the seekbar.</string>
+        play to restart the song.\nTo move in the song drag the seekbar.\nIt is possible to search by title, artist or genre. To go back press the unsearch button.</string>
     <string name="play_song_deleted">Mediaplayer stopped. Playing song deleted.</string>
     <string name="confirm_dialog">OK</string>
     <string name="already_in">Song already in the list</string>
     <string name="channel_desc">Information about playing song</string>
+    <string name="search">Search by</string>
 </resources>
