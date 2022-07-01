@@ -16,9 +16,9 @@ import java.util.UUID
 object SongModel {
 
     //Array di canzoni
-    val SONG_ITEMS: MutableList<Song> = ArrayList()
+    var SONG_ITEMS: MutableList<Song> = ArrayList()
     //Mappa di canzioni accessibili tramite l'ID usato come chiave
-    val SONG_MAP: MutableMap<UUID, Song> = HashMap()
+    var SONG_MAP: MutableMap<UUID, Song> = HashMap()
 
 
     var SEARCH_SONG_ITEMS: MutableList<Song> = ArrayList()
