@@ -83,7 +83,7 @@ class SongsListActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         toolbar.title = title
-        toolbar.setLogo(R.drawable.ic_launcher_foreground)
+        toolbar.setLogo(R.mipmap.ic_logo_foreground)
 
         //Click listener per aggiungere una canzone alla lista.
         //Viene richiamata l'activity di sistema ACTION_PICK per recuperare la canzone

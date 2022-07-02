@@ -1,14 +1,11 @@
 package it.unife.isa.symphony
 
 import android.net.Uri
-import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import it.unife.isa.symphony.content.SongModel
-
 import org.junit.Test
 import org.junit.runner.RunWith
-
 import org.junit.Assert.*
 import org.junit.Before
 import java.util.*
@@ -85,7 +82,6 @@ class SongModelTest {
     @Test
     fun getNextSong() {
         val startSize=SongModel.SONG_ITEMS.size
-        Log.d("----test---",startSize.toString())
         if(startSize>0)
         {
             val pos=(0..startSize-1).random()
@@ -97,7 +93,6 @@ class SongModelTest {
     @Test
     fun getPrevSong() {
         val startSize=SongModel.SONG_ITEMS.size
-        Log.d("----test---",startSize.toString())
         if(startSize>0)
         {
             var pos=(0..startSize-1).random()
