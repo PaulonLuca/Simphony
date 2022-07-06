@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.os.IBinder
 import android.provider.MediaStore
 import android.view.*
-import android.view.View.OnFocusChangeListener
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -215,13 +214,10 @@ class SongsListActivity : AppCompatActivity() {
 
     private fun setupRecyclerView(recyclerView: RecyclerView)
     {
-        //TODO COMPLETARE LA RICERCA
         if (searched)
             recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SEARCH_SONG_ITEMS, twoPane)
         else
             recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SONG_ITEMS, twoPane)
-        //then SongModel.SEARCH_SONG_ITEMS, else SongModel.SONG_ITEMS
-        //recyclerView.adapter = SongRecyclerViewAdapter(this, SongModel.SONG_ITEMS, twoPane)
 
         //Listener per rimuovere un elemento dalla recycler view con slide verso sinistra
         val deleteListener=object: ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT)
@@ -381,6 +377,8 @@ class SongsListActivity : AppCompatActivity() {
                     Toast.makeText(applicationContext, R.string.no_picked_audio, Toast.LENGTH_SHORT).show()
                 }
             }
+
+            //Selezione modalità di ricerca
             R.id.artist->{
                 if(item.isChecked)
                     item.setChecked(false)

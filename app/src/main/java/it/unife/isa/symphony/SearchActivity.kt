@@ -8,6 +8,11 @@ import android.util.Log
 import android.view.Menu
 import it.unife.isa.symphony.content.SongModel
 
+/**
+ * Activity che, se avviata, popola le liste di ricerca da
+ * visualizzare nella recycler view.
+ */
+
 class SearchActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,7 +22,7 @@ class SearchActivity : AppCompatActivity() {
 
     override fun onMenuOpened(featureId: Int, menu: Menu): Boolean {
         return super.onMenuOpened(featureId, menu)
-        Log.d("------TEST------","PAssa")
+        Log.d("Test","Test1")
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -31,9 +36,6 @@ class SearchActivity : AppCompatActivity() {
             val query = intent.getStringExtra(SearchManager.QUERY)
             SongModel.searched=true
             SongModel.searchBy(SongModel.searchFor,query!!)
-            //use the query to search your data somehow
-            //Log.d("SEARCH",query!!)
-            //se serach query è "" ricarica tutto altrimenti filtra solo per nome
             navigateUpTo(Intent(this, SongsListActivity::class.java))
         }
     }

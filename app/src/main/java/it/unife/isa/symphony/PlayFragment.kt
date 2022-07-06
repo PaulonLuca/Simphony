@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
 import android.view.*
 import androidx.fragment.app.Fragment
 import android.widget.*
@@ -24,9 +23,6 @@ import java.util.*
  * Tale frammento è contenuto sia in [SongsListActivity] su tablet
  * e sia in [SongDetailActivity] su smartphone.
  */
-
-//TODO activity ricerca
-//TODO copertina canzone (?)
 
 class PlayFragment : Fragment() {
 
@@ -113,7 +109,6 @@ class PlayFragment : Fragment() {
             val songDuration=savedInstanceState.getString(SONG_DURATION)
             val songGenre=savedInstanceState.getString(SONG_GENRE)
             paused = savedInstanceState.getBoolean(PAUSED, false)
-            Log.d("paused == ", paused.toString())
             selectedSong= Song(UUID.fromString(songId),songTitle!!,songArtist!!, Uri.parse(songUri),songDuration!!,songGenre!!)
         }
     }

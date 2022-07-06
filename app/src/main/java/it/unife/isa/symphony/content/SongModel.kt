@@ -3,7 +3,6 @@ package it.unife.isa.symphony.content
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import it.unife.isa.symphony.SongOpenHelper
 import java.util.UUID
 
@@ -20,8 +19,9 @@ object SongModel {
     //Mappa di canzioni accessibili tramite l'ID usato come chiave
     var SONG_MAP: MutableMap<UUID, Song> = HashMap()
 
-
+    //Array di canzoni cercate
     var SEARCH_SONG_ITEMS: MutableList<Song> = ArrayList()
+    //Mappa di canzioni cercate
     var SEARCH_SONG_MAP: MutableMap<UUID, Song> = HashMap()
 
     // Quando si fa la ricerca, si setta searched a True. Nel tornare a @SongsListActivity
@@ -52,7 +52,6 @@ object SongModel {
                 val uri=Uri.parse(cursor.getString(3))
                 val duration=cursor.getString(4)
                 val genre=cursor.getString(5)
-                Log.d("--------Test--------",title + " /// " + genre)
                 val s=Song(id,title,artist,uri,duration,genre)
 
                 //Inserimento nella lista e nella mappa
@@ -139,6 +138,8 @@ object SongModel {
         return SONG_ITEMS[SONG_ITEMS.size-1]
     }
 
+    //In base all'attributo di ricerca, si inseriscono le canzoni
+    //nelle strutture dati di ricerca
     fun searchBy(attributo: Int, keyword: String)
     {
         if(attributo==ARTIST) {

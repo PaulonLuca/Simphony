@@ -208,14 +208,18 @@ class PlayerService : Service() {
             }
         }
 
-        fun resume() {
+        fun resume()
+        {
+            //Se la canzone è in pausa si mette in riproduzione, se era già in riproduzione non si fa nulla
             isPaused = false
             isPlaying=true
             mp.start()
         }
 
-        // Funzione che restituisce lo stato di pausa della canzone
-        fun getPause(): Boolean {
+
+        fun getPause(): Boolean
+        {
+            //Funzione che restituisce lo stato di pausa della canzone
             return isPaused
         }
 
