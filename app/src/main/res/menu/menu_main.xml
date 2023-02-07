@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/recreate"
+        android:title="Full list"
+        android:icon="@drawable/ic_baseline_search_off_24"
+        android:visible="false"
+        app:showAsAction="collapseActionView|ifRoom"/>
+
+    <item android:id="@+id/search"
+        android:title="search"
+        android:icon="@drawable/ic_baseline_search_24"
+        app:showAsAction="collapseActionView|ifRoom"
+        app:actionViewClass="android.widget.SearchView" />
+
+    <item android:id="@+id/menu_add"
+        android:title="@string/add_song"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/menu_guide"
+        android:title="@string/guide"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/settings"
+        android:title="@string/search">
+        <menu >
+            <group android:id="@+id/startScreenGroup"
+                android:checkableBehavior="single">
+                <item android:id="@+id/title"
+                    android:title="Title"
+                    android:checked="true"/>
+                <item android:id="@+id/artist"
+                    android:title="Artist" />
+                <item android:id="@+id/genre"
+                    android:title="Genre" />
+            </group>
+        </menu>
+    </item>
+
+</menu>

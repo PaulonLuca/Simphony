@@ -1,3 +1,26 @@
 <resources>
-    <string name="app_name">Symphony</string>
+    <string name="app_name">"Symphony"</string>
+    <string name="now_playing">Now Playing</string>
+    <string name="greetings">Let\'s make some music!</string>
+    <string name="button_play">Play</string>
+    <string name="button_stop">Stop</string>
+    <string name="song_artist">Paul Whiteman Orchestra</string>
+    <string name="song_title">Doo Wacka Doo</string>
+    <string name="channel_name">Player service</string>
+    <string name="channel_description">Info about songs</string>
+    <string name="desc_floating_btn">Plus button</string>
+    <string name="guide">Guide</string>
+    <string name="add_song">Add song</string>
+    <string name="no_picked_audio">Song not picked</string>
+    <string name="no_permission">Access memory permission</string>
+    <string name="no_permission_message">You shuold grant the permission to access media. In negative case the app will be closed immediately.</string>
+    <string name="info">How to use the app</string>
+    <string name="info_message">To add a song press + floating button or add song in the menu.\nTo delete a song slide the song left.\nTo play music tap
+    on a song.\nTo play/pause press play/pause buttons.\nTo change song press previous or next.\nTo stop the music press STOP and then
+        play to restart the song.\nTo move in the song drag the seekbar.\nIt is possible to search by title, artist or genre. To go back press the unsearch button.</string>
+    <string name="play_song_deleted">Mediaplayer stopped. Playing song deleted.</string>
+    <string name="confirm_dialog">OK</string>
+    <string name="already_in">Song already in the list</string>
+    <string name="channel_desc">Information about playing song</string>
+    <string name="search">Search by</string>
 </resources>
